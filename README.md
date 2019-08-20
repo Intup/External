@@ -1,7 +1,7 @@
 # External
 Back to the scripting platforms! 
 
-#Scripts features 
+# Scripts features 
 ![Jax](https://user-images.githubusercontent.com/54212392/63308862-e0ab0f00-c2ca-11e9-803b-22a67dfa070b.png)
 > Combo:  
 - E Mode: Stun or Blocking.
