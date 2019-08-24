@@ -690,7 +690,7 @@ function Pyke:DrawingSpells()
         local Hero = Game.Hero(i)
     	if not Hero.isEnemy then return end
 
-    	local data = Last_r[nerd.networkID];
+    	local data = Last_r[Hero.networkID];
     	if not data then return end
 
     	if data.kill and data.draw then
