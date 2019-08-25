@@ -1,5 +1,5 @@
 --Requi
-IntAIOVersion = 0.02
+IntAIOVersion = 0.05
 require("DamageLib")
 --require('GamsteronPrediction')
 
