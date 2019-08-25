@@ -1,4 +1,5 @@
 --Requi
+IntAIOVersion = 0.02
 require("DamageLib")
 --require('GamsteronPrediction')
 
@@ -496,7 +497,7 @@ class 'Kayn'
 --Soon
 class 'Jinx'
 
---[[function Jinx:hero_buff(unit, name)
+function Jinx:hero_buff(unit, name)
     for i = 0, unit.buffCount do
 		local buff = unit:GetBuff(i)
     	if buff and string.lower(buff.name) == string.lower(name) then
@@ -548,33 +549,118 @@ function Jinx:MenuLoading()
     --R
     self.Menu.pc:MenuElement({id = "bu", name = "Base Ult", value = true})
     self.Menu.pc:MenuElement({id = "manur", name = "Manual R", key = string.byte("T")})
-    self.Menu.pc:MenuElement({id = "manaw", name = "^- Don't use W under mana percent", value = 2000, min = 1, max = 5000, step = 1})
+    self.Menu.pc:MenuElement({id = "range", name = "^- Max manual ult range", value = 5000, min = 1, max = 25000, step = 1})
     --Key
     self.Menu.pc:MenuElement({id = "combekey", name = "Combo", key = string.byte(" ")})
 end
 function Jinx:Tick()
-    self.pred_W = {Delay = 0.25, Radius = 120, Range = 1280, Speed = 1350, Collision = false, Type = 0, CollisionTypes = 0, UseBoundingRadius = true}
+    self.pred_W = {Delay = 0.5, Radius = 55, Range = 1450, Speed = 3200, Collision = true}
+    self.pred_E = {Delay = 0.95, Radius = 50, Range = 890, Speed = 1100, Collision = false}
+    self.pred_r = {Delay = 0.65, Radius = 120, Range = math.huge, Speed = 1700, Collision = false, Type = 0, CollisionTypes = 2}
     local target = TargetSelection(1000)
     if not target then
 		if not self:minigun() then
             Control.CastSpell(HK_Q)
 		end
 	 	return
-	end
+    end
+    
+    if self.Menu.pc.ce:Value() then
+        self:Chulipin(target);
+    end
+    self:e_spot(target);
+    
     if self.Menu.pc.combekey:Value() then
-        if self.Menu.pc.cw:Value() then
+        if target and target.visible and not target.dead and target.valid then
             self:ZapZap(target);
+            --
+            if (myHero.mana/myHero.maxMana*100) < self.Menu.pc.mana:Value() then return end
+            if self:minigun() and myHero.pos:DistanceTo(target.pos) > 525 then
+                Control.CastSpell(HK_Q)
+            end
+        end
+    end
+    --[[for i = 1, Game.HeroCount() do
+        local Hero = Game.Hero(i)
+        if Hero.isEnemy then
+            if Hero and Hero.visible and not Hero.dead and Hero.valid then
+                if self:hero_buff(Hero, 'Recall') then
+                if not Hero.pathing.hasMovePath then 
+                        if IsReady(_R) then
+                            Control.CastSpell(HK_R,Hero.pos)
+                        end
+                    end
+                end
+            end
+        end 
+    end]]
+    self:FishMinigun(target);
+    self:UltMate();
+end
+
+function Jinx:UltMate()
+    local target = TargetSelection(self.Menu.pc.range:Value())
+    if target and not target.dead and target.valid then
+        if self.Menu.pc.bu:Value() then 
+            if IsReady(_R) then 
+                local dist = myHero.pos:DistanceTo(target.pos);
+                if not target.dead and dist <= self.Menu.pc.range:Value() and dist > 525 and getdmg("R", target, myHero) >= target.health then
+                    local Rpred = GetGamsteronPrediction(target, self.pred_r, myHero)
+                    if Rpred.Hitchance >= 3 then
+                        Control.CastSpell(HK_R, Rpred.CastPosition)
+                    end
+                end
+            end
         end
     end
 end
-
-
-function Jinx:ZapZap(unit)
-    print()
+function Jinx:FishMinigun(target)
+    if target and target.visible and not target.dead and target.valid then
+        local nerds = self:CountBounigs(target, 100);
+        if not self:minigun() then
+             if myHero.pos:DistanceTo(target.pos) <= 525 and nerds == 1 or (myHero.mana/myHero.maxMana*100 < self.Menu.pc.mana:Value()) then
+                Control.CastSpell(HK_Q)
+            end
+        else
+            if nerds > 1 then
+                Control.CastSpell(HK_Q)
+            end
+        end
+    end
+end
+function Jinx:e_spot(target)
+	if not self.Menu.pc.auto:Value() then return end
+	if not IsReady(_E) then return end
+	for i = 1, #spots do
+		local spot_pos = Vector(spots[i][1], spots[i][2], spots[i][3]);
+		if spot_pos:DistanceTo(target.pos) < 200 and myHero.pos:DistanceTo(spot_pos) > 100 then
+			
+            local epred = GetGamsteronPrediction(target, self.pred_E, myHero)
+            if epred.Hitchance >= 1 then
+                Control.CastSpell(HK_E, epred.CastPosition)
+            end
+        end
+	end
+end
+function Jinx:Chulipin(target)
+    if target and target.visible and not target.dead and target.valid then
+        if self.Menu.pc.manue:Value() then
+            Control.Move(mousePos);
+        end
+        if IsReady(_E) then
+            if target.pos:DistanceTo(myHero.pos) < 890 then
+                local epred = GetGamsteronPrediction(target, self.pred_E, myHero)
+                if epred.Hitchance >= 1 then
+                    Control.CastSpell(HK_E, epred.CastPosition)
+                end
+            end
+        end
+    end
+end
+function Jinx:ZapZap(target)
     if IsReady(_W) then
-        if unit and unit.pos:DistanceTo(myHero.pos) < 1450 then
-            local Pred = GetGamsteronPrediction(unit, self.pred_W, myHero)
-           -- if not wpred then return end
+        if (target) and (target.pos:DistanceTo(myHero.pos) > 525) then
+            local Pred = GetGamsteronPrediction(target, self.pred_W, myHero)
             if Pred.Hitchance >= 3  then
                 Control.CastSpell(HK_W, Pred.CastPosition)
             end
@@ -583,8 +669,10 @@ function Jinx:ZapZap(unit)
 end
 
 function Jinx:DrawingSpells()
-
-end]]
+    if IsReady(_W) then 
+        Draw.Circle(myHero.pos, 1450, 3,  Draw.Color(255, 104, 255, 162)) 
+    end
+end
 
 class 'Ezreal'
 
@@ -690,7 +778,7 @@ function Pyke:DrawingSpells()
         local Hero = Game.Hero(i)
     	if not Hero.isEnemy then return end
 
-    	local data = Last_r[Hero.networkID];
+    	local data = Last_r[nerd.networkID];
     	if not data then return end
 
     	if data.kill and data.draw then
@@ -700,6 +788,7 @@ function Pyke:DrawingSpells()
 	end
 end]]
 Callback.Add("Load", function()
+    _G.LATENCY = 0.05
     --Loading champs
     local _IsHero = _G[myHero.charName]();
     --Return Callbacks
@@ -712,4 +801,11 @@ Callback.Add("Load", function()
         _IsHero:Tick();
         --_IsHero:ItemChamps();
     end)
+end)
+
+GetWebResultAsync("https://raw.githubusercontent.com/Intup/External/master/IntAIO/IntAIOVersion.version", function(data)
+    if tonumber(data) > IntAIOVersion then
+      PrintChat("<b><font color='#EE2EC'>IntAIO - </font></b> New version found! " ..data.." Downloading update, please wait...")
+      DownloadFileAsync("https://raw.githubusercontent.com/Intup/External/master/IntAIO/IntAIO.lua", SCRIPT_PATH .. "IntAIO.lua", function() print("<b><font color='#EE2EC'>IntAIO - </font></b> Updated from v"..tostring(IntAIOVersion).." to v"..data..". Please press F6 twice to reload.") return end)
+    end
 end)
