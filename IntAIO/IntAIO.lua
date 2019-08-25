@@ -803,7 +803,7 @@ Callback.Add("Load", function()
     end)
     GetWebResultAsync("https://raw.githubusercontent.com/Intup/External/master/IntAIO/IntAIOVersion.version", function(data)
         if tonumber(data) > IntAIOVersion then
-          PrintChat("<b><font color='#EE2EC'>IntAIO - </font></b> New version found! " ..data.." Downloading update, please wait...")
+          print("<b><font color='#EE2EC'>IntAIO - </font></b> New version found! " ..data.." Downloading update, please wait...")
           DownloadFileAsync("https://raw.githubusercontent.com/Intup/External/master/IntAIO/IntAIO.lua", SCRIPT_PATH .. "IntAIO.lua", function() print("<b><font color='#EE2EC'>IntAIO - </font></b> Updated from v"..tostring(IntAIOVersion).." to v"..data..". Please press F6 twice to reload.") return end)
         end
     end)
