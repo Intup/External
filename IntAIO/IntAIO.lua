@@ -1,5 +1,5 @@
 --Requi
-IntAIOVersion = 0.05
+IntAIOVersion = 0.02
 require("DamageLib")
 --require('GamsteronPrediction')
 
@@ -554,9 +554,9 @@ function Jinx:MenuLoading()
     self.Menu.pc:MenuElement({id = "combekey", name = "Combo", key = string.byte(" ")})
 end
 function Jinx:Tick()
-    self.pred_W = {Delay = 0.5, Radius = 55, Range = 1450, Speed = 3200, Collision = true}
-    self.pred_E = {Delay = 0.95, Radius = 50, Range = 890, Speed = 1100, Collision = false}
-    self.pred_r = {Delay = 0.65, Radius = 120, Range = math.huge, Speed = 1700, Collision = false, Type = 0, CollisionTypes = 2}
+    self.pred_W = {Delay = 0.5, Radius = 55, Range = 1450, Speed = 3200, Collision = true,  Type = _G.SPELLTYPE_LINE}
+    self.pred_E = {Delay = 0.95, Radius = 50, Range = 890, Speed = 1100, Collision = false, Type = _G.SPELLTYPE_CIRCLE}
+    self.pred_r = {Delay = 0.65, Radius = 120, Range = math.huge, Speed = 1700, Collision = false, Type = _G.SPELLTYPE_LINE}
     local target = TargetSelection(1000)
     if not target then
 		if not self:minigun() then
@@ -596,8 +596,55 @@ function Jinx:Tick()
     end]]
     self:FishMinigun(target);
     self:UltMate();
+    self:BaseUlt();
+end
+local RecallData = { }
+function Jinx:ProcessRecall(unit, recall)
+    if not unit.isEnemy then return end
+	if recall.isStart then
+    		table.insert(RecallData, {object = unit, start = Game.Timer(), duration = (recall.totalTime*0.001)})
+    	else
+      	for i, rc in pairs(RecallData) do
+        	if rc.object.networkID == unit.networkID then
+          		table.remove(RecallData, i)
+        	end
+      	end
+    end
 end
 
+function Jinx:GetRecallData(unit)
+    for i, recall in pairs(RecallData) do
+        if recall.object.networkID == unit.networkID then
+          return {isRecalling = true, timeToRecall = recall.start+recall.duration-Game.Timer()}
+        end
+    end
+    return {isRecalling = false, timeToRecall = 0}
+end
+
+--Spells R Jinx
+function Jinx:calculed_dista(dist)
+	if myHero.charName == 'Jinx' then
+        return (dist > 1350 and (1350*1700+((dist-1350)*2200))/dist or 1700)
+    end
+end
+
+function Jinx:calculed_speed()
+    local dist = myHero.pos:DistanceTo(side);
+    local speed = self:calculed_dista(dist);
+    if myHero.charName == 'Jinx' then
+      return (dist / speed) + 0.65 + Game.Latency();
+    end 
+end
+local Side_red = Vector(14340, 172, 14384)
+
+-- Set myHero team side --
+local side = Side_red
+if myHero.team == 200 then
+	side = Side_red
+end
+function Jinx:BaseUlt()
+   --
+end
 function Jinx:UltMate()
     local target = TargetSelection(self.Menu.pc.range:Value())
     if target and not target.dead and target.valid then
@@ -606,7 +653,7 @@ function Jinx:UltMate()
                 local dist = myHero.pos:DistanceTo(target.pos);
                 if not target.dead and dist <= self.Menu.pc.range:Value() and dist > 525 and getdmg("R", target, myHero) >= target.health then
                     local Rpred = GetGamsteronPrediction(target, self.pred_r, myHero)
-                    if Rpred.Hitchance >= 3 then
+                    if Rpred.Hitchance >= 2 then
                         Control.CastSpell(HK_R, Rpred.CastPosition)
                     end
                 end
@@ -669,17 +716,38 @@ function Jinx:ZapZap(target)
 end
 
 function Jinx:DrawingSpells()
-    if IsReady(_W) then 
-        Draw.Circle(myHero.pos, 1450, 3,  Draw.Color(255, 104, 255, 162)) 
+    if IsReady(_W) then
+        Draw.Circle(myHero.pos, 1450, 3,  Draw.Color(255, 104, 255, 162))
     end
 end
 
 class 'Ezreal'
 
+function Ezreal:MenuLoading()
+    self.Menu = MenuElement({type = MENU, id = 'Ezreal', name = 'IntAIO - Ezreal', leftIcon = "https://raw.githubusercontent.com/Intup/External/master/Champion%20AIO/Ezreal.png"})
+    --Combo
+    --self.Menu:MenuElement({id = 'ez', name = 'Combo', type = MENU})
+    --self.Menu.ez:MenuElement({id = 'cq', name = 'Use Q', value = true})
+    --.Menu.ez:MenuElement({id = })
+end
+
 class 'Pyke'
 
---[[local last_execute = 0;
-local q_pred = {Type = _G.SPELLTYPE_LINE, Collision = true, Delay = 0.25; Radius = 70; Speed = 2000;}
+--[[function Pyke:MenuLoading()
+    self.Menu = MenuElement({type = MENU, id = "Pyke", name = "IntAIO - Pyke", leftIcon = "https://raw.githubusercontent.com/Intup/External/master/Champion%20AIO/Pyke.png"})
+    --Combo
+    self.Menu:MenuElement({id = "pc", name = "Combo", type = MENU})
+    self.Menu.pc:MenuElement({id = "cq", name = "Use Q", value = true})
+    self.Menu.pc:MenuElement({id = "minq", name = "^- Min. Range", value = 450, min = 1, max = 500, step = 5})
+    -->> E << --
+    self.Menu.pc:MenuElement({id = "ce", name = "Use E", value = true})
+    -->> R << --
+    self.Menu.pc:MenuElement({id = "cr", name = "Use R", value = true})
+    self.Menu.pc:MenuElement({id = "combekey", name = "Combo", key = string.byte(" ")})
+end
+
+local last_execute = 0;
+local q_pred = {Delay = 0.25, Radius = 70,Rang = 1200, Speed = 2000, Type = _G.SPELLTYPE_LINE, Collision = true}
 local Last_r = { };
 function Pyke:Tick()
     self:UpdateBuffe();
@@ -687,10 +755,12 @@ function Pyke:Tick()
     --EXECUTED:?
     for i = 1, Game.HeroCount() do
         local Hero = Game.Hero(i)
-        if Hero.isEnemy and Hero.visible and not Hero.dead then 
-            if not Last_r[Hero.networkID] then Last_r[Hero.networkID] = {} end
+        if Hero.isEnemy and Hero.visible and not Hero.dead then
+            if not Last_r[Hero.networkID] then 
+                Last_r[Hero.networkID] = {}
+            end
             Last_r[Hero.networkID].kill = false;
-            if  getdmg("R", Hero, myHero) >= Hero.health and not Hero.dead and Hero.visible then
+            if getdmg("R", Hero, myHero) >= Hero.health and not Hero.dead and Hero.visible then
                 Last_r[Hero.networkID].kill = true;
                 self:Executed(Hero);
             end
@@ -698,22 +768,23 @@ function Pyke:Tick()
     end
     if self.Menu.pc.combekey:Value() then
         if IsReady(_Q) then
-            if (IsReady(_E) and target.pos:DistanceTo(myHero.pos) < 400) and not self:BuffePyke(myHero, "PykeQ") then return end
-            if target.pos:DistanceTo(myHero.pos) > self:Q_range() then return end
-
-            local Pred = GetGamsteronPrediction(target, q_pred, myHero)
-            if not qpred then return end
-            ---- SOON
+            if (not IsReady(_E) and target.pos:DistanceTo(myHero.pos) < 400) and self:BuffePyke(myHero, "PykeQ") then
+                if target.pos:DistanceTo(myHero.pos) < self:Q_range() then  
+                    local Qpred = GetGamsteronPrediction(target, q_pred, myHero)
+                    -- Save
+                end
+            end
         end
     end
 end
 
 
-local pred_r = { Delay = 0.325; Radius  = 50; Speed = 1100;}
+local pred_r = { Delay = 0.325; Radius  = 50; Speed = 1100, Type = _G.SPELLTYPE_CIRCLE}
 function Pyke:Executed(unit)
-    if myHero.pos:DistanceTo(unit.pos) > 700 then return end
-	if not unit.dead and unit.visible and unit.isTargetable then 
-       
+    if myHero.pos:DistanceTo(unit.pos) < 700 then  
+        if not unit.dead and unit.visible then
+
+        end
     end
 end
 function Pyke:BuffePyke(unit, name)
@@ -748,20 +819,6 @@ function Pyke:Q_range()
     end
 
      return range
-end
-
-
-function Pyke:MenuLoading()
-    self.Menu = MenuElement({type = MENU, id = "Pyke", name = "IntAIO - Pyke", leftIcon = "https://raw.githubusercontent.com/Intup/External/master/Champion%20AIO/Pyke.png"})
-    --Combo
-    self.Menu:MenuElement({id = "pc", name = "Combo", type = MENU})
-    self.Menu.pc:MenuElement({id = "cq", name = "Use Q", value = true})
-    self.Menu.pc:MenuElement({id = "minq", name = "^- Min. Range", value = 450, min = 1, max = 500, step = 5})
-    -->> E << --
-    self.Menu.pc:MenuElement({id = "ce", name = "Use E", value = true})
-    -->> R << --
-    self.Menu.pc:MenuElement({id = "cr", name = "Use R", value = true})
-    self.Menu.pc:MenuElement({id = "combekey", name = "Combo", key = string.byte(" ")})
 end
 
 function Pyke:DrawingSpells()
@@ -800,12 +857,10 @@ Callback.Add("Load", function()
     Callback.Add("Tick", function()
         _IsHero:Tick();
         --_IsHero:ItemChamps();
+        
     end)
-    GetWebResultAsync("https://raw.githubusercontent.com/Intup/External/master/IntAIO/IntAIOVersion.version", function(data)
-        if tonumber(data) > IntAIOVersion then
-          print("<b><font color='#EE2EC'>IntAIO - </font></b> New version found! " ..data.." Downloading update, please wait...")
-          DownloadFileAsync("https://raw.githubusercontent.com/Intup/External/master/IntAIO/IntAIO.lua", SCRIPT_PATH .. "IntAIO.lua", function() print("<b><font color='#EE2EC'>IntAIO - </font></b> Updated from v"..tostring(IntAIOVersion).." to v"..data..". Please press F6 twice to reload.") return end)
-        end
+    Callback.Add("ProcessRecall", function(unit, recall) 
+        Jinx:ProcessRecall(unit, recall) 
     end)
 end)
 
