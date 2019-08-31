@@ -41,15 +41,6 @@ local function DisableMovement(bool)
 end
 class 'Master'
 
-local blinksList = {
-	["Ekko"] = { 2 },
-	["Ezreal"] = { 2 },
-	["FiddleSticks"] = { 3 },
-	["Kassadin"] = { 3 },
-	["Katarina"] = { 2 },
-	["Yasuo"] = { 3 }
-}
-
 function Master:MenuLoading()
     self.Menu = MenuElement({type = MENU, id = "Master Yi", name = "IntYi", leftIcon = "https://raw.githubusercontent.com/Intup/External/master/Champion%20AIO/MasterYi.png"})
     --Combo Sttings
@@ -215,54 +206,18 @@ function Master:FollowDash(target)
 	end
 end
 
-function Master:FollowBlink(spell)
-    if spell and spell == target and not target.attackData.state == STATE_ATTACK  then
-		local castQ = false
-		local champ = spell.owner
-		local name = champ.charName
-		if spell.name == "SummonerFlash" then
-			castQ = true
-		elseif blinksList[name] then
-			local champBlinks = blinksList[name]
-			for i = 1, #champBlinks do
-				if champBlinks[i] == spell.activeSpellSlot then
-					castQ = true
-					break
-				end
-			end
-		else
-			if name == "Leblanc" then
-				if spell.activeSpellSlot == 1 then
-					castQ = true
-				elseif spell.name == "LeblancRWReturn" then
-					castQ = true
-				end
-			elseif spell.name == "LissandraE" then
-				if self:Buffer(champ, "lissandrae") then
-					castQ = true
-				end
-			elseif name == "Zed" then
-				if spell.name == "ZedW2" then
-					castQ = true
-				elseif spell.name == "ZedR2" then
-					castQ = true
-				end
-			end
-		end
-		if castQ and champ and champ.visible and not champ.dead then
-            Control.CastSpell(HK_Q, champ);
-		end
-	end
-end
+--[[function Master:FollowBlink(spell)
+	--Retir
+end]]
 
 function Master:OnRecvSpell(target)
     self:Dodge();
-    if self.Menu.misc.follow:Value() and self.Menu.mistec.combekey:Value() and target then
+    --[[if self.Menu.misc.follow:Value() and self.Menu.mistec.combekey:Value() and target then
         local spell = target.activeSpell
         if spell and spell.valid then
             self:FollowBlink(spell)
         end
-	end
+	end]]
 end
 
 function Master:OnTick()
